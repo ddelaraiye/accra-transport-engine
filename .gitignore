@@ -1,14 +1,18 @@
-# Data files (Too large for GitHub)
-data/*.osm.pbf
-data/*.osm
+# All Spatial Data files
+*.osm.pbf
+*.pbf
+*.osm
+*.shp
+*.dbf
+
+# Docs / Scratchpad
+some commands.txt
+*.~lock*
 
 # Python
 __pycache__/
 *.py[cod]
-*.egg-info/
 venv/
-
-# Environment / Secrets
 .env
 
 # OS junk
