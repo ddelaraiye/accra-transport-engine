@@ -1,0 +1,16 @@
+# Data files (Too large for GitHub)
+data/*.osm.pbf
+data/*.osm
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+
+# Environment / Secrets
+.env
+
+# OS junk
+.DS_Store
+Thumbs.db
