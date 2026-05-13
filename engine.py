@@ -84,26 +84,36 @@ def main():
                 # 2. Calculate Route
                 time_mins, steps = calculate_macro_route(cur, start_id, end_id)
                 
-                # 3. Format Output
+                # 3. Format Output as Human Intelligence
+                clean_steps = []
+                seen = set()
+                for step in steps:
+                    if step and step not in seen and not step.replace(" ", "").isdigit():
+                        if step.lower() not in ['fidelity', 'none', 'cal bank', 'stanbic']:
+                            clean_steps.append(step)
+                            seen.add(step)
+
+                # Calculate heuristic fare (Minimum fare in Accra is GHS 3.00)
+                fare_min = max(3, int(time_mins / 3))
+                fare_max = fare_min + 2
+
+                # Generate the narrative string (Use user's words for start/end)
+                if len(clean_steps) <= 2:
+                    narrative = f"Take a direct trotro from {args.start.capitalize()} to {args.end.capitalize()}."
+                else:
+                    middle_hubs = ", ".join(clean_steps[1:-1])
+                    narrative = f"From {args.start.capitalize()}, take a trotro through {middle_hubs}, and alight at {args.end.capitalize()}."
+                # Print the Decision Intelligence
                 print("\n" + "="*50)
                 print("🧠 INFORMAL TRANSIT DECISION")
                 print("="*50)
-                print(f"Origin:      {args.start.capitalize()} (Mapped to: {start_db_name})")
-                print(f"Destination: {args.end.capitalize()} (Mapped to: {end_db_name})")
+                print(f"Route: {args.start.capitalize()} -> {args.end.capitalize()}")
+                print(f"Time:  ~{time_mins} minutes")
+                print(f"Fare:  GHS {fare_min}.00 - {fare_max}.00 (Estimated)")
                 print("-" * 50)
-                print(f"Est. Time:   ~{time_mins} minutes")
-                print(f"Hops:        {len(steps)} bases")
-                print("-" * 50)
-                print("NAVIGATION SEQUENCE:")
-                seen_names = set()
-                step_num = 1
-                for step in steps:
-                    # Skip duplicates, skip garbage OSM data (None, pure numbers, bank names)
-                    if step and step not in seen_names and not step.replace(" ", "").isdigit():
-                        if step.lower() not in ['fidelity', 'none', 'cal bank', 'stanbic']:
-                            print(f"  {step_num}. Transit Hub: [ {step} ]")
-                            seen_names.add(step)
-                            step_num += 1
+                print("INSTRUCTION:")
+                print(f"  {narrative}")
+                print("="*50 + "\n")
 
     except Exception as e:
         print(f"\n❌ ENGINE ERROR: {e}\n")
