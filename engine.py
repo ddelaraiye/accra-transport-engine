@@ -52,20 +52,28 @@ def find_valid_node(cursor, location_name):
         raise ValueError(f"Could not find a valid routing node for '{location_name}'. Check the spelling.")
     return result[0]
 
-def calculate_route(cursor, start_node, end_node):
+def calculate_route(cursor, start_node, end_node, mode="car"):
     """
-    Runs pgRouting Dijkstra between two nodes.
-    Returns total time in minutes and the distinct street names used.
+    Runs pgRouting Dijkstra based on the chosen transport mode.
+    Uses SQL aliases to satisfy pgRouting's strict naming requirements.
     """
-    query = """
+    # Dynamically select the cost column and ALIAS it to 'cost' for pgRouting
+    if mode == "tro-tro":
+        cost_cols = "cost_trotro AS cost, reverse_cost_trotro AS reverse_cost"
+        sum_col = "cost_trotro"
+    else: # Default to standard car routing
+        cost_cols = "cost AS cost, reverse_cost AS reverse_cost"
+        sum_col = "cost"
+
+    query = f"""
         WITH path AS (
             SELECT edge FROM pgr_dijkstra(
-                'SELECT id, source, target, cost FROM routing_network.edges',
+                'SELECT id, source, target, {cost_cols} FROM routing_network.edges',
                 %s, %s
             ) WHERE edge != -1
         )
         SELECT 
-            ROUND(SUM(e.cost)::numeric, 2) as total_time,
+            ROUND(SUM(e.{sum_col})::numeric, 2) as total_time,
             array_agg(DISTINCT NULLIF(e.route_name, '')) as roads_used
         FROM path p 
         JOIN routing_network.edges e ON p.edge = e.id;
@@ -74,18 +82,18 @@ def calculate_route(cursor, start_node, end_node):
     result = cursor.fetchone()
     
     if not result or result[0] is None:
-        raise ValueError("No drivable path found between these locations.")
+        raise ValueError(f"No drivable path found for mode: {mode}.")
         
     return result[0], result[1]
-
 def main():
     parser = argparse.ArgumentParser(description="Accra Informal Transport Decision Engine")
     parser.add_argument("--from", dest="start", required=True, help="Start location (e.g., 'Circle')")
     parser.add_argument("--to", dest="end", required=True, help="Destination (e.g., 'Madina')")
+    parser.add_argument("--mode", dest="mode", default="car", choices=["car", "tro-tro"], help="Transport mode (default: car)")
     
     args = parser.parse_args()
 
-    print(f"\n[ENGINE] Calculating route from {args.start} to {args.end}...")
+    print(f"\n[ENGINE] Calculating {args.mode.upper()} route from {args.start} to {args.end}...")
     
     try:
         with get_db_connection() as conn:
@@ -94,19 +102,19 @@ def main():
                 start_id = find_valid_node(cur, args.start)
                 end_id = find_valid_node(cur, args.end)
                 
-                # 2. Calculate the route
-                time_mins, roads = calculate_route(cur, start_id, end_id)
+                # 2. Calculate the route using the selected mode
+                time_mins, roads = calculate_route(cur, start_id, end_node=end_id, mode=args.mode)
                 
-                # 3. Format output for human reading
-                # Filter out None values from the roads array
+                # 3. Format output
                 clean_roads = [str(r) for r in roads if r is not None]
-                road_summary = ", ".join(clean_roads[:3]) # Show top 3 road names
+                road_summary = ", ".join(clean_roads[:3])
                 
                 print("\n" + "="*50)
-                print("✅ ROUTE FOUND")
+                print(f"✅ {args.mode.upper()} ROUTE FOUND")
                 print("="*50)
                 print(f"From:    {args.start.capitalize()}")
                 print(f"To:      {args.end.capitalize()}")
+                print(f"Mode:    {args.mode.capitalize()}")
                 print(f"Time:    ~{time_mins} minutes")
                 print(f"Via:     {road_summary if road_summary else 'Local street network'}")
                 print("="*50 + "\n")
