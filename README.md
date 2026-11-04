@@ -42,7 +42,9 @@ QGIS Visualization (neon styling, Draw Effects, tiered labels)
 
 ```
 .
-├── docker-compose.yml          # pgrouting/pgrouting image + PostGIS volume
+├── docker-compose.yml          # pgrouting/pgrouting image + PostGIS volume (env-driven creds)
+├── .env.example                # Credential template — copy to .env (gitignored)
+├── db.py                       # Shared DB config; reads POSTGRES_*/PG* env vars
 ├── engine.py                   # Main CLI decision engine (macro routing)
 ├── fetch_trotro_ways.py        # Pulls tro-tro route ways from Overpass API (Accra BBox)
 ├── find_bases.py               # Maps human intent names ("Kaneshie") to system base names
@@ -70,13 +72,23 @@ pip install psycopg2-binary requests
 
 ## Quick Start
 
+### 0. Configure credentials
+
+Credentials are never hardcoded — copy the template and set your own password:
+
+```bash
+cp .env.example .env   # edit POSTGRES_PASSWORD before starting the DB
+```
+
+Docker Compose reads this `.env` file, and every Python script reads the same variables via `db.py`.
+
 ### 1. Start the database engine
 
 ```bash
 docker compose up -d
 ```
 
-This boots the `accra_transit_db` container (PostgreSQL + PostGIS + pgRouting) on port `5432` and runs `scripts/init_db.sql` automatically on first start.
+This boots the `accra_transit_db` container (PostgreSQL + PostGIS + pgRouting) on port `5432` (bound to `127.0.0.1` only) and runs `scripts/init_db.sql` automatically on first start.
 
 ### 2. Load OSM data
 
