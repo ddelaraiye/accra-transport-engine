@@ -4,11 +4,11 @@ services:
     image: pgrouting/pgrouting
     container_name: accra_transit_db
     environment:
-      POSTGRES_USER: transit_admin
-      POSTGRES_PASSWORD: ghana_transit_2024
-      POSTGRES_DB: informal_transport
+      POSTGRES_USER: ${POSTGRES_USER:-transit_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-informal_transport}
     ports:
-      - "0.0.0.0:5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql

@@ -2,13 +2,9 @@ import requests
 import psycopg2
 import time
 
-DB_CONFIG = {
-    "host": "127.0.0.1",
-    "port": "5432",
-    "dbname": "informal_transport",
-    "user": "transit_admin",
-    "password": "ghana_transit_2024"
-}
+from db import db_config
+
+DB_CONFIG = db_config()
 
 # Our exact bounding box: South, West, North, East
 BBOX = "5.4545,-0.59,5.92,0.095"

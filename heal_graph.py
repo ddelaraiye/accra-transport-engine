@@ -1,12 +1,8 @@
 import psycopg2
 
-DB_CONFIG = {
-    "host": "127.0.0.1",
-    "port": "5432",
-    "dbname": "informal_transport",
-    "user": "transit_admin",
-    "password": "ghana_transit_2024"
-}
+from db import db_config
+
+DB_CONFIG = db_config()
 
 def diagnose_and_heal():
     with psycopg2.connect(**DB_CONFIG) as conn:

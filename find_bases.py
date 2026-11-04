@@ -1,12 +1,8 @@
 import psycopg2
 
-DB_CONFIG = {
-    "host": "127.0.0.1",
-    "port": "5432",
-    "dbname": "informal_transport",
-    "user": "transit_admin",
-    "password": "ghana_transit_2024"
-}
+from db import db_config
+
+DB_CONFIG = db_config()
 
 def find_base(intent_name, stop_name):
     query = "SELECT base_name, route_convergence_score FROM routing_network.transit_bases ORDER BY geom <-> (SELECT way FROM planet_osm_point WHERE name = %s LIMIT 1) LIMIT 1"
